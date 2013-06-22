@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+    
+    <com.leven.videoplayer.VideoGridView
+        android:id="@+id/videoGrid"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:horizontalSpacing="2.0dip"
+        android:numColumns="2"
+        android:fastScrollEnabled="true"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="4.0dip">
+    </com.leven.videoplayer.VideoGridView>
+
+</LinearLayout>

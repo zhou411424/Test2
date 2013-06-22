@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:padding="10dip" >
+
+    <ImageView
+        android:id="@+id/iv_folder_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/ic_list_dropdown_folder_normal" />
+
+    <LinearLayout
+        android:id="@+id/layout_folder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:layout_toRightOf="@id/iv_folder_icon"
+        android:layout_marginLeft="10dp"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/tv_folder_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:id="@+id/tv_video_num"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/folder_color"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tv_folder_path"
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dip"
+                android:singleLine="true"
+                android:ellipsize="start"
+                android:gravity="right"
+                android:textColor="@color/folder_color"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/iv_folder_operation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:background="@drawable/button_triangle_list_seletor" />
+
+</RelativeLayout>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/menu_frame"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@drawable/navigation_bg_repeat"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/titlebar"
+        android:layout_width="fill_parent"
+        android:layout_height="48.0dip"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/navigation_title_header_bg" >
+
+        <RelativeLayout
+            android:layout_width="fill_parent"
+            android:layout_height="46.0dip"
+            android:layout_alignParentTop="true"
+            android:gravity="center_vertical" >
+
+            <TextView
+                android:id="@+id/navigation_title"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="20.0dip"
+                android:gravity="center"
+                android:text="@string/app_name"
+                android:textColor="#ffd2d2d2"
+                android:textSize="20.0dip" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="16.0dip"
+                android:gravity="center_vertical"
+                android:orientation="horizontal" >
+
+                <ImageButton
+                    android:id="@+id/feedback"
+                    android:layout_width="44.0dip"
+                    android:layout_height="44.0dip"
+                    android:layout_marginLeft="20.0dip"
+                    android:layout_marginRight="4.0dip"
+                    android:background="@null"
+                    android:src="@drawable/menu_frame_feedback_selector" />
+
+                <ImageButton
+                    android:id="@+id/settings"
+                    android:layout_width="44.0dip"
+                    android:layout_height="44.0dip"
+                    android:background="@null"
+                    android:src="@drawable/navigation_settings_selector" />
+            </LinearLayout>
+        </RelativeLayout>
+
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="2.0dip"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/navigation_header_shadow" />
+    </RelativeLayout>
+
+    <ListView
+        android:id="@+id/menu_list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/titlebar"
+        android:cacheColorHint="@android:color/transparent"
+        android:divider="@drawable/navigation_list_divider"
+        android:dividerHeight="@dimen/navigation_list_divider"
+        android:fadingEdgeLength="0.0dip"
+        android:listSelector="@null"
+        android:scrollbars="none" />
+
+    <View
+        android:layout_width="14.0dip"
+        android:layout_height="fill_parent"
+        android:layout_alignParentRight="true"
+        android:background="@drawable/navigation_list_right_shadow" />
+
+</RelativeLayout>

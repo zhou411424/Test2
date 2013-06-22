@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/layout_grid_thumb"
+        android:layout_width="match_parent"
+        android:layout_height="116dp" >
+
+        <ImageView
+            android:id="@+id/iv_grid_video_thumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_centerInParent="true" />
+
+        <ImageView
+            android:id="@+id/iv_grid_new_video_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignRight="@id/iv_grid_video_thumb"
+            android:layout_alignTop="@id/iv_grid_video_thumb"
+            android:src="@drawable/ic_video_thumbnail_new"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/progress1"
+            style="@style/ProgressBar_Mini"
+            android:layout_width="match_parent"
+            android:layout_height="18dp"
+            android:layout_alignBottom="@id/iv_grid_video_thumb"
+            android:layout_alignLeft="@id/iv_grid_video_thumb"
+            android:layout_alignRight="@id/iv_grid_video_thumb" />
+
+        <TextView
+            android:id="@+id/tv_grid_video_duration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignBottom="@id/iv_grid_video_thumb"
+            android:layout_alignLeft="@id/iv_grid_video_thumb"
+            android:layout_alignRight="@id/iv_grid_video_thumb"
+            android:layout_alignWithParentIfMissing="true"
+            android:ellipsize="middle"
+            android:gravity="right"
+            android:paddingRight="4dp"
+            android:singleLine="true"
+            android:textColor="#ffffff"
+            android:textSize="14sp" />
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tv_grid_video_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="middle"
+        android:singleLine="true" />
+
+</LinearLayout>

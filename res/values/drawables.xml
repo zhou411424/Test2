@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item type="drawable" name="normal">#ffffffff</item>
+    <item type="drawable" name="backgroundgary">#a0959899</item>
+    <item type="drawable" name="list_videotitletextcolor">#8363bc</item>
+    <item type="drawable" name="trans">#00000000</item>
+</resources>
