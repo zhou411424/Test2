@@ -9,13 +9,18 @@ import java.util.Locale;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.net.Uri;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -25,11 +30,13 @@ import android.provider.Settings.SettingNotFoundException;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
+import com.leven.videoplayer.fragment.LocalVideoFragment;
 import com.leven.videoplayer.utils.DownloadSoUtils;
 import com.leven.videoplayer.utils.LogUtil;
 import com.leven.videoplayer.utils.VideoObservable;
@@ -82,7 +89,29 @@ public class VideoPlayActivity extends Activity {
     private WindowManager.LayoutParams mWinParams;
     private int mTotalNum = 0;
     private boolean mbIsOrderinAddedtime;
-    private boolean mbChangeEndable;
+	private boolean mbChangeEndable;
+	private boolean mbIsActivie = false;
+	private boolean mbIsBackBtnPress = false;
+	private boolean mIsViewShowing = false;
+	private boolean mbScanner_status = false;
+	private int mPauseCount = 0;
+	private BroadcastReceiver mKeyguardEventReceiver = null;
+	private boolean mReceiverRegisted;
+	private static final String SCREEN_CAPTRUE = "android.intent.action.video.screencapture.start";
+	private static final String CAPTRUE_SAVE = "android.intent.action.video.screencapture.save";
+	private static final String CAPTRUE_SHARE = "android.intent.action.video.screencapture.share";
+	private static final String CAPTRUE_CANCEL = "android.intent.action.video.screencapture.cancel";
+	private BroadcastReceiver mScreenCaptureReceiver;
+	private final static int PLAYER_PAUSE_FLAG = 2004;
+	private final static int PLAYER_WAIT_PAUSE = 2005;
+	private final static int PLAYER_WAIT_RESUME = 2006;
+	private final static int PLAYER_REFRESH_UI = 2007;
+	private final static int SCREEN_CAPTURE = 2008;
+	private final static int CAPTURE_SAVE = 2009;
+	private final static int CAPTURE_SHARE = 2010;
+	private final static int CAPTURE_CANCEL = 2011;
+	private IntentFilter mScreenCaptureFilter;
+	private int mRefreshCount = 0;
     
     private Handler mHandler = new Handler() {
 
@@ -118,15 +147,15 @@ public class VideoPlayActivity extends Activity {
             finish();
             return;
         }
-        Log.d(TAG, "intentProcess()==true");
+        LogUtil.d(TAG, "intentProcess()==true");
         //accelerometer
-        int accelerometerDefault = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, -1);
+        /*int accelerometerDefault = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, -1);
         //accelerometerDefault -->0:no rotate, 1:rotate 90, 2:rotate 180, 3:rotate 270
         if(accelerometerDefault != 0) {
             mbSupportRotate = true;
         } else {
             setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR | ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        }
+        }*/
         
         mbNeedSavePos = true;
         mTelephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
@@ -304,7 +333,7 @@ public class VideoPlayActivity extends Activity {
             } else {
                 cur = getContentResolver().query(uri, projection, null, null, null);
             }
-            LogUtil.d(TAG, "groupVideos()==>mbInFilePath="+mbInFilePath);
+            LogUtil.d(TAG, "mbInFilePath="+mbInFilePath);
             if(cur != null && cur.moveToFirst()) {
                 String name = null;
                 String data = null;
@@ -319,6 +348,7 @@ public class VideoPlayActivity extends Activity {
                     FileEntry fileEntry = new FileEntry(fileId, name, data, dataAdded);
                     mFileList.add(fileEntry);
                 }
+                LogUtil.d(TAG, "mFileList size="+mFileList.size());
                 FileComparator fileComparator = new FileComparator();
                 Collections.sort(mFileList, fileComparator);
             }
@@ -587,14 +617,14 @@ public class VideoPlayActivity extends Activity {
     private boolean updateStatInfoToDB(int videoId, int playPos,
             String path) {
         if(mVideoStatDao != null) {
-//        	LogUtil.d(TAG, "updateStatInfoToDB()==>path="+path + ", videoId="+videoId);
+//        	LogUtil.d(TAG, "path="+path + ", videoId="+videoId);
             if(path != null && path.startsWith("//")) {
                 path = path.substring(1);
-//                LogUtil.d(TAG, "updateStatInfoToDB()==>path="+path);
+//              LogUtil.d(TAG, "path="+path);
             }
             boolean err = mVideoStatDao.update(videoId, playPos, path, true);
             if(err == false) {
-                Log.d(TAG, "failed to update current played file's stat to db.");
+                LogUtil.d(TAG, "failed to update current played file's stat to db.");
             }
             return err;
         }
@@ -605,7 +635,7 @@ public class VideoPlayActivity extends Activity {
         if(Intent.ACTION_VIEW.equals(intent.getAction())) {
             mNeedSyncWithDB = false;
             mUri = intent.getData();
-            Log.d(TAG, "mUri=" + mUri.toString());
+            LogUtil.d(TAG, "mUri=" + mUri.toString());
             String uriPrefix = (MediaStore.Video.Media.EXTERNAL_CONTENT_URI).toString();
             //      content://media/external/video/media
             if(mUri != null && mUri.toString().startsWith(uriPrefix)) {
@@ -651,7 +681,7 @@ public class VideoPlayActivity extends Activity {
                 mPlayPos = 0;
             }
         } else {
-            Log.d(TAG, "! ACTION_VIEW");
+            LogUtil.d(TAG, "! ACTION_VIEW");
             Bundle bundle = intent.getExtras();
             if(bundle != null) {
                 mUriString = bundle.getString(VIDEO_PATH);
@@ -707,7 +737,7 @@ public class VideoPlayActivity extends Activity {
             } else {
                 mbPlugIn = false;
             }
-            Log.d(TAG, "mbPlugIn="+mbPlugIn);
+            LogUtil.d(TAG, "mbPlugIn="+mbPlugIn);
             return true;
         }
         return false;
@@ -768,7 +798,7 @@ public class VideoPlayActivity extends Activity {
     }
     
     public void lockOrientation(boolean bLock){
-        if(mbSupportRotate){
+        /*if(mbSupportRotate){
             if(bLock){
                 int ore = this.getResources().getConfiguration().orientation;
                 if(ore == Configuration.ORIENTATION_LANDSCAPE){
@@ -781,21 +811,240 @@ public class VideoPlayActivity extends Activity {
             else{
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
             }
-        }
+        }*/
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        unRegisterPhoneListener();
-    }
+	@Override
+	protected void onStart() {
+		((AudioManager) getSystemService(AUDIO_SERVICE)).requestAudioFocus(
+				null, AudioManager.STREAM_MUSIC,
+				AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+		super.onStart();
+	}
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-    
-    
+	@Override
+	public void onPause() {
+		mbIsActivie = false;
+		mbScanner_status = false;
+		mIsViewShowing = true;
+		mPauseCount++;
+		unRegisterKeyguardEventListener();
+
+		// mHandler.removeMessages(MSG_GET_MEDIASCANNER_STATUS);
+
+		int iDuration = 0;
+		if (!isPlugIN(mUri)) {
+			if (mPauseCount <= 1) {
+				iDuration = mPlayer.getDuration() / 1000;
+				mLastPos = mPlayer.getCurrentPosition() / 1000;
+				if (mLastPos >= iDuration - 2) {
+					mLastPos = 0;
+				}
+			}
+		} else {
+			if (mPauseCount <= 1) {
+				iDuration = mPlayer.getDuration();
+				mLastPos = mPlayer.getCurrentPosition() / 1000;
+				if (mLastPos >= iDuration - 2) {
+					mLastPos = 0;
+				}
+			}
+		}
+
+		if (mVideoId != -1) {
+			SharedPreferences sharedPreference = getSharedPreferences(
+					LocalVideoFragment.LAST_SHOWMODE,
+					Context.MODE_WORLD_WRITEABLE);
+			Editor editor = sharedPreference.edit();
+			editor.putInt(LocalVideoFragment.LAST_PLAYED_FILE, mVideoId);
+			editor.commit();
+
+			if (mbNeedSavePos) {
+				updateStatInfoToDB(mVideoId, mLastPos, mUri.getPath());
+			}
+		}
+
+		if (mReceiverRegisted) {
+			mReceiverRegisted = false;
+			unregisterReceiver(mBatInfoReceiver);
+			unregisterReceiver(mScreenCaptureReceiver);
+		}
+
+		if (mPlayer.isPaused()) {
+			mbIsPausedFromRestart = true;
+		} else {
+			mbIsPausedFromRestart = false;
+		}
+
+		mHandler.sendMessageDelayed(
+				Message.obtain(mHandler, PLAYER_WAIT_PAUSE), 30);
+
+		/*
+		 * if (mbIsUserGuide) { mbIsUserGuide = false; mbIsPausedFromRestart =
+		 * false; // resetUserGuide(); }
+		 */
+		if (mPlayer != null && mPlayer.mVideoView != null) {
+			if (!isPlugIN(mUri)) {
+				mPlayer.mVideoView.setViewVisible(View.INVISIBLE);
+			}
+
+		}
+
+		super.onPause();
+	}
+
+	@Override
+	public void onResume() {
+		mbIsActivie = true;
+		mbIsBackBtnPress = false;
+		mIsViewShowing = true;
+
+		if (!mReceiverRegisted) {
+			mReceiverRegisted = true;
+			IntentFilter iFilter = new IntentFilter(
+					Intent.ACTION_BATTERY_CHANGED);
+			iFilter.addAction(Intent.ACTION_SCREEN_OFF);
+			this.registerReceiver(mBatInfoReceiver, iFilter);
+		}
+
+		if (mKeyguardManager != null) {
+			if (!mKeyguardManager.inKeyguardRestrictedInputMode()) {
+				Log.d(TAG, "Launch video");
+				resumeVideo();
+			} else {
+				Log.d(TAG, "onResume(), screen lock, don't play video");
+				registerKeyguardEventListener();
+			}
+		}
+
+		mScreenCaptureFilter = new IntentFilter(SCREEN_CAPTRUE);
+		mScreenCaptureFilter.addAction(CAPTRUE_SAVE);
+		mScreenCaptureFilter.addAction(CAPTRUE_SHARE);
+		mScreenCaptureFilter.addAction(CAPTRUE_CANCEL);
+		mScreenCaptureReceiver = new ScreenCaptureReceiver();
+		registerReceiver(mScreenCaptureReceiver, mScreenCaptureFilter);
+
+		if (mPlayer != null && mPlayer.mVideoView != null) {
+			if (!isPlugIN(mUri)) {
+				mPlayer.mVideoView.setViewVisible(View.VISIBLE);
+			}
+
+		}
+		mPlayer.mVideoView.configurationChanged();
+		mPlayer.configTime();
+		super.onResume();
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		unRegisterPhoneListener();
+		((AudioManager) getSystemService(AUDIO_SERVICE))
+				.abandonAudioFocus(null);
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+	}
+
+	private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
+		public void onReceive(Context arg0, Intent intent) {
+			int iCharging = intent.getIntExtra(BatteryManager.EXTRA_STATUS,
+					BatteryManager.BATTERY_STATUS_UNKNOWN);
+			if (BatteryManager.BATTERY_STATUS_CHARGING == iCharging) {
+				mPlayer.updateChargingStatus(true);
+			} else {
+				mPlayer.updateChargingStatus(false);
+			}
+
+			int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+			mPlayer.updateBatteryInfo(level);
+		}
+	};
+
+	public class ScreenCaptureReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			if (SCREEN_CAPTRUE.equals(action)) {
+				mHandler.sendEmptyMessage(SCREEN_CAPTURE);
+			} else if (CAPTRUE_SAVE.equals(action)) {
+				mHandler.sendEmptyMessage(CAPTURE_SAVE);
+			} else if (CAPTRUE_SHARE.equals(action)) {
+				mHandler.sendEmptyMessage(CAPTURE_SHARE);
+			} else if (CAPTRUE_CANCEL.equals(action)) {
+				mHandler.sendEmptyMessage(CAPTURE_CANCEL);
+			}
+		}
+	}
+
+	private void resumeVideo() {
+		mPauseCount = 0;
+		if (mVideoId != -1) {
+			if (mLastPos > 0) {
+				mPlayPos = mLastPos;
+			} else if (mNeedSyncWithDB) {
+				mPlayPos = getStatInfoFromDB(mVideoId);
+
+			}
+		}
+
+		if (mbIsPlayingFromPhone) {
+			mbIsPlayingFromPhone = false;
+			mPlayer.onResume(mPlayPos, mPlayPos > 0);
+			mRefreshCount = 0;
+			mHandler.sendMessageDelayed(
+					Message.obtain(mHandler, PLAYER_REFRESH_UI), 1000);
+		} else {
+			if (mbIsPausedFromRestart) {
+				setVolumeMute(true);
+				mPlayer.onResume(mPlayPos, false);
+				mHandler.sendMessageDelayed(
+						Message.obtain(mHandler, PLAYER_PAUSE_FLAG), 500);
+			} else {
+				mPlayer.onResume(mPlayPos, mPlayPos > 0);
+				mRefreshCount = 0;
+				mHandler.sendMessageDelayed(
+						Message.obtain(mHandler, PLAYER_REFRESH_UI), 1000);
+			}
+		}
+
+		mbIsPausedFromRestart = false;
+		mbScanner_status = true;
+
+		// mHandler.sendMessage(Message.obtain(mHandler,
+		// MSG_GET_MEDIASCANNER_STATUS));
+	}
+
+	private void setVolumeMute(boolean bmute) {
+		AudioManager audioManager;
+		audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+		audioManager.setStreamMute(AudioManager.STREAM_MUSIC, bmute);
+	}
+
+	public void registerKeyguardEventListener() {
+		if (mKeyguardEventReceiver == null) {
+			mKeyguardEventReceiver = new BroadcastReceiver() {
+				@Override
+				public void onReceive(Context context, Intent intent) {
+					resumeVideo();
+				}
+			};
+
+			IntentFilter iFilter = new IntentFilter();
+			iFilter.addAction(Intent.ACTION_USER_PRESENT);
+			registerReceiver(mKeyguardEventReceiver, iFilter);
+		}
+	}
+
+	public void unRegisterKeyguardEventListener() {
+		if (mKeyguardEventReceiver != null) {
+			unregisterReceiver(mKeyguardEventReceiver);
+			mKeyguardEventReceiver = null;
+		}
+	}
+
     public void playNextVideo() {
         if (0 >= mTotalNum) {
             mTotalNum = getVideoCount(this);

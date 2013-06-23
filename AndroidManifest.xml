@@ -36,10 +36,11 @@
           android:name=".DownloadSoActivity"
           android:label="@string/app_name"
           android:screenOrientation="portrait" />
+
         <activity android:name=".VideoPlayActivity"
-         android:label="@string/app_name"
+         android:configChanges="orientation|keyboardHidden|screenSize"
          android:screenOrientation="landscape"
-         android:configChanges="orientation|keyboardHidden|screenSize">
+         android:label="@string/app_name" >
          <intent-filter>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.DEFAULT" />

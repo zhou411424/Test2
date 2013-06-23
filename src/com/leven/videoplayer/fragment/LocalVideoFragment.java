@@ -57,6 +57,8 @@ import com.slidingmenu.lib.SlidingMenu;
 
 public class LocalVideoFragment extends SherlockFragment {
 	private static final String SHOW_MODE = "show_mode";
+	public static final String LAST_SHOWMODE = "last_show_mode";
+	public static final String LAST_PLAYED_FILE = "last_played_file";
 	private int mShowMode = -1;
 	public static final int LIST_MODE = 0;
 	public static final int GRID_MODE = 1;
