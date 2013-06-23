@@ -7,22 +7,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Locale;
 
-import com.leven.videoplayer.DownloadSoActivity;
-import com.leven.videoplayer.R;
-import com.leven.videoplayer.VideoPlayActivity;
-import com.leven.videoplayer.utils.DownloadSoUtils;
-import com.leven.videoplayer.utils.LogUtil;
-import com.leven.videoplayer.utils.VideoObservable;
-import com.leven.videoplayer.utils.VideoStatDao;
-import com.leven.videoplayer.video.CyberPlayerCore;
-import com.leven.videoplayer.video.MoviePlayer;
-
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
@@ -41,6 +29,13 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+
+import com.leven.videoplayer.utils.DownloadSoUtils;
+import com.leven.videoplayer.utils.LogUtil;
+import com.leven.videoplayer.utils.VideoObservable;
+import com.leven.videoplayer.utils.VideoStatDao;
+import com.leven.videoplayer.video.CyberPlayerCore;
+import com.leven.videoplayer.video.MoviePlayer;
 
 public class VideoPlayActivity extends Activity {
 
@@ -136,8 +131,6 @@ public class VideoPlayActivity extends Activity {
         mbNeedSavePos = true;
         mTelephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
         mKeyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        String mIMEI = mTelephonyManager.getDeviceId();
-        String mSysVersion = android.os.Build.VERSION.RELEASE;
         
         mVideoObservable = new VideoObservable(this);
         //listen the screen on or off
@@ -311,6 +304,7 @@ public class VideoPlayActivity extends Activity {
             } else {
                 cur = getContentResolver().query(uri, projection, null, null, null);
             }
+            LogUtil.d(TAG, "groupVideos()==>mbInFilePath="+mbInFilePath);
             if(cur != null && cur.moveToFirst()) {
                 String name = null;
                 String data = null;
@@ -436,6 +430,7 @@ public class VideoPlayActivity extends Activity {
     }
 
     private void startPlayerByPath(String videoPath) {
+		LogUtil.d(TAG, "play video by path");
         if(videoPath == null) {
             return;
         }
@@ -452,11 +447,12 @@ public class VideoPlayActivity extends Activity {
                 mPlayer.mVideoView.stopPlayback();
             }
         }
-        
+
         if(LAST_COMPONENT.equals(mCurrStatus)) {
             mVideoId = videoId;
             mUri = Uri.parse("file://" + videoPath);
             mPlayPos = getStatInfoFromDB(mVideoId);
+            LogUtil.d(TAG, "mPlayPos="+mPlayPos);
             mPlayer.restartplay(mUri, mLastPos);
         } else {
             mbNeedSavePos = false;
@@ -475,11 +471,14 @@ public class VideoPlayActivity extends Activity {
     }
     
     private boolean hasNextVideo() {
+		// eg. /mnt/sdcard/external_sd/Movies/甄妮84年演唱会/1.mp4
         String pathSeg = mUri.getLastPathSegment();
         if(pathSeg == null) {
             return false;
         }
-        String mCurVideoPath = mUri.getLastPathSegment().toString();
+//        String mCurVideoPath = mUri.getLastPathSegment().toString();
+        String mCurVideoPath = mUri.getPath();
+//        LogUtil.d(TAG, "hasNextVideo()==>pathSeg="+pathSeg + ", mCurVideoPath="+mCurVideoPath);
         if(mFileList == null) {
             return false;
         }
@@ -493,6 +492,8 @@ public class VideoPlayActivity extends Activity {
                     return false;
                 }
                 mNextVideoPath = mFileList.get(i + 1).data;
+                LogUtil.d(TAG, "mCurVideoPath="+mCurVideoPath+", mNextVideoPath="+mNextVideoPath);
+                LogUtil.d(TAG, "isSamePath="+isSamePath(mCurVideoPath, mNextVideoPath));
                 return isSamePath(mCurVideoPath, mNextVideoPath);// same name,but diff
             }
         }
@@ -500,6 +501,8 @@ public class VideoPlayActivity extends Activity {
     }
     
     public boolean isSamePath(String path1, String path2) {
+		// path1=/mnt/sdcard/external_sd/Movies/Jackson演唱会/1.mp4
+		// path2=/mnt/sdcard/external_sd/Movies/Jackson演唱会/2.mp4
         //left
         String leftStr = path1.substring(0, path1.lastIndexOf("."));
         String nameLeft = substringFromNum(leftStr);// to get "AA" for AA01
@@ -507,6 +510,9 @@ public class VideoPlayActivity extends Activity {
         //right
         String rightStr = path2.substring(0, path2.lastIndexOf("."));
         String nameRight = substringFromNum(rightStr);
+
+		LogUtil.d(TAG, "leftStr=" + leftStr + ", nameLeft=" + nameLeft);
+		LogUtil.d(TAG, "rightStr=" + rightStr + ", nameRight=" + nameRight);
         if(nameLeft != null && nameRight != null) {
             return nameLeft.contentEquals(nameRight);
         } else if(nameLeft == null && nameRight == null) {
@@ -516,9 +522,10 @@ public class VideoPlayActivity extends Activity {
         }
     }
     
-    private String substringFromNum(String videoname)
-    {
+    private String substringFromNum(String videoname) {
+		// /mnt/sdcard/external_sd/Movies/Jackson演唱会/1
         String name = videoname;
+        LogUtil.d(TAG, "hasDigital(videoname)="+hasDigital(videoname));
         if(hasDigital(videoname) == -1){
             return name;
         }
@@ -580,8 +587,10 @@ public class VideoPlayActivity extends Activity {
     private boolean updateStatInfoToDB(int videoId, int playPos,
             String path) {
         if(mVideoStatDao != null) {
+//        	LogUtil.d(TAG, "updateStatInfoToDB()==>path="+path + ", videoId="+videoId);
             if(path != null && path.startsWith("//")) {
                 path = path.substring(1);
+//                LogUtil.d(TAG, "updateStatInfoToDB()==>path="+path);
             }
             boolean err = mVideoStatDao.update(videoId, playPos, path, true);
             if(err == false) {
@@ -672,10 +681,7 @@ public class VideoPlayActivity extends Activity {
                 }
                 
                 //video_order
-                String video_order = bundle.getString(VIDEO_ORDER);
-                if(video_order != null) {
-                    mbOrderInAddedTime = Boolean.parseBoolean(video_order);
-                }
+                mbOrderInAddedTime = bundle.getBoolean(VIDEO_ORDER);
                 
                 //user_guide
                 String user_guide = bundle.getString(USER_GUIDE);
@@ -717,6 +723,7 @@ public class VideoPlayActivity extends Activity {
                 if(cs != null && cs.moveToFirst()) {
                     String recordedPath = cs.getString(cs.getColumnIndex(VideoStatDao.FILE_PATH));
                     String uriPath = mUri.getPath();
+                    LogUtil.d(TAG, "recordedPath="+recordedPath+", uriPath="+uriPath);
                     if(recordedPath != null && uriPath.startsWith("//") 
                             && recordedPath.compareTo(uriPath.substring(1)) == 0 
                             || recordedPath.compareTo(uriPath) == 0) {
@@ -795,6 +802,7 @@ public class VideoPlayActivity extends Activity {
             if (-1 == mTotalNum) {
                 return;
             }
+			LogUtil.d(TAG, "mTotalNum=" + mTotalNum);
         }
 
         if (++mPosInList >= mTotalNum) {
@@ -804,10 +812,12 @@ public class VideoPlayActivity extends Activity {
         if (isPlugIN(mUri)) {
             mCurrStatus = LAST_PLUGIN;
         } else {
+			LogUtil.d(TAG, "mCurrStatus is no plugin");
             mCurrStatus = LAST_COMPONENT;
         }
 
         mLastPos = mPlayer.getCurrentPosition() / 1000;
+		LogUtil.d(TAG, "mPosInList=" + mPosInList + ", mLastPos=" + mLastPos);
         if (mVideoId != -1) {
             updateStatInfoToDB(mVideoId, mLastPos, mUri.getPath());
         }
@@ -815,24 +825,29 @@ public class VideoPlayActivity extends Activity {
         String videoPath = null;
         if (mbIsOrderinAddedtime) {
             if (mbInFilePath) {
+				LogUtil.d(TAG, "order in added time and in file path");
                 videoPath = mVideoObservable
                         .queryNextVideoName_orderinAddedDate_InFolderByID(
                                 mPosInList, getFolderBucketId());
             } else {
+				LogUtil.d(TAG, "order in added time but not in file path");
                 videoPath = mVideoObservable.queryNextVideoNameByID(mPosInList);
             }
 
         } else {
             if (mbInFilePath) {
+				LogUtil.d(TAG, "order in name and in file path");
                 videoPath = mVideoObservable
                         .queryNextVideoNameByID_InNameOrder_InFilePath(
                                 mPosInList, getFolderBucketId());
             } else {
+				LogUtil.d(TAG, "order in name but not in file path");
                 videoPath = mVideoObservable
                         .queryNextVideoNameByID_InNameOrder(mPosInList);
             }
 
         }
+		LogUtil.d(TAG, "videoPath=" + videoPath);
         Uri uri = Uri.parse("file://" + videoPath);
         if (isPlugIN(uri)) {
             boolean bIsDownloaded = DownloadSoUtils.hasDownloaded(this,

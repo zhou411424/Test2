@@ -187,9 +187,11 @@ public class VideoStatDao {
 		PlayFileInfo playFileInfo = new PlayFileInfo(videoId, playPos, last_played, path);
 		int result = innerUpdateFile(playFileInfo);
 		if(result != 1) {
+			// insert operation or return error
 			Log.d(TAG, "failed to do inner file info update,with return value " + result);
 			return false;
 		} else {
+			// update operation
 			return true;
 		}
 	}
@@ -216,8 +218,10 @@ public class VideoStatDao {
 					values.put(FILE_PATH, path);
 					values.put(LAST_PLAYED, last_played == true ? "true" : "false");
 					count = mDB.update(PLAYSTAT_TABLE_NAME, values, VIDEO_ID_SELECTION, whereArgs);
+					LogUtil.d(TAG, "update() ==> count="+count);
 				} else {
 					count = insert(videoId, playPos, path, last_played);
+					LogUtil.d(TAG, "insert() ==> count="+count);
 				}
 			} finally {
 				if(cr != null) {

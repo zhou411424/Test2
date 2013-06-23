@@ -3,6 +3,7 @@
     <issue id="ContentDescription" severity="ignore" />
     <issue id="DefaultLocale" severity="ignore" />
     <issue id="ExportedActivity" severity="ignore" />
+    <issue id="HandlerLeak" severity="ignore" />
     <issue id="SimpleDateFormat" severity="ignore" />
     <issue id="UseCompoundDrawables" severity="ignore" />
     <issue id="UseSparseArrays" severity="ignore" />
