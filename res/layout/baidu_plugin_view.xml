@@ -13,7 +13,7 @@
         android:orientation="vertical"
         android:visibility="gone" >
     </com.baidu.video.BaiduVideoView> -->
-    <com.baidu.video.CyberPlayerSurface
+    <com.leven.videoplayer.video.CyberPlayerSurface
         android:id="@+id/baidu_plugin_video_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

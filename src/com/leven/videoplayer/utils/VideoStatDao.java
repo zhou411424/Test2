@@ -69,6 +69,23 @@ public class VideoStatDao {
     	return new VideoStatDao(context);
     }
 	
+	public void close() {
+	    synchronized (SYNCHRONIZE) {
+	        mUsers--;
+	        if(mUsers == 0) {
+	            if(mDB != null) {
+	                mDB.close();
+	                mDB = null;
+	            }
+	            
+	            if(mDatabaseHelper != null) {
+	                mDatabaseHelper.close();
+	                mDatabaseHelper = null;
+	            }
+	        }
+        }
+	}
+	
 	public Cursor queryPlayedInfoByVideoId(int videoId) {
 		Cursor cursor = null;
 		if(mDB == null) {

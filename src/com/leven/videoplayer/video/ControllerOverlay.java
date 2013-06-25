@@ -27,7 +27,7 @@ public interface ControllerOverlay {
     void onSeekStart();
     void onSeekMove(int time);
     void onSeekEnd(int time);
-    int  onGetSeekPos();   
+    int  onGetSeekPos();
     void onShown();
     void onHidden();
     void onReplay();

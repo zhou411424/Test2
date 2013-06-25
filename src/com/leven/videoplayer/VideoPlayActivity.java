@@ -9,13 +9,13 @@ import java.util.Locale;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
+import android.app.KeyguardManager.KeyguardLock;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.media.AudioManager;
@@ -24,6 +24,7 @@ import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.provider.Settings.SettingNotFoundException;
@@ -91,12 +92,10 @@ public class VideoPlayActivity extends Activity {
     private boolean mbIsOrderinAddedtime;
 	private boolean mbChangeEndable;
 	private boolean mbIsActivie = false;
-	private boolean mbIsBackBtnPress = false;
-	private boolean mIsViewShowing = false;
 	private boolean mbScanner_status = false;
 	private int mPauseCount = 0;
 	private BroadcastReceiver mKeyguardEventReceiver = null;
-	private boolean mReceiverRegisted;
+	private boolean mReceiverRegisted = false;
 	private static final String SCREEN_CAPTRUE = "android.intent.action.video.screencapture.start";
 	private static final String CAPTRUE_SAVE = "android.intent.action.video.screencapture.save";
 	private static final String CAPTRUE_SHARE = "android.intent.action.video.screencapture.share";
@@ -118,6 +117,51 @@ public class VideoPlayActivity extends Activity {
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
+            switch (msg.what) {
+            case PLAYER_PAUSE_FLAG:
+                if (mPlayer.isPlaying()) {
+                    mPlayer.onPause();
+                    mPlayer.hideUI();
+                    mHandler.removeMessages(PLAYER_PAUSE_FLAG);
+                    mRefreshCount = 0;
+                    if (!mHandler.hasMessages(PLAYER_REFRESH_UI)) {
+                        mHandler.sendMessageDelayed(Message.obtain(
+                                mHandler, PLAYER_REFRESH_UI), 500);
+                    }
+                } else {
+                    mRefreshCount = 0;
+                    if (!mHandler.hasMessages(PLAYER_REFRESH_UI)) {
+                        mHandler.sendMessageDelayed(Message.obtain(
+                                mHandler, PLAYER_REFRESH_UI), 500);
+                    }
+
+                    mHandler.sendMessageDelayed(Message.obtain(
+                            mHandler, PLAYER_PAUSE_FLAG), 200);
+                }
+                setVolumeMute(false);
+                break;
+            case PLAYER_WAIT_PAUSE:
+                if (mPlayer.isVideoSurfaceCreated()) {
+                    mPlayer.onPause();
+                    mHandler.removeMessages(PLAYER_WAIT_PAUSE);
+                } else {
+                    mHandler.sendMessageDelayed(Message.obtain(
+                            mHandler, PLAYER_WAIT_PAUSE), 200);
+                }
+                break;
+            case PLAYER_REFRESH_UI:
+                mPlayer.refreshUI();
+                mHandler.sendMessageDelayed(
+                        Message.obtain(mHandler, PLAYER_REFRESH_UI),
+                        200);
+                if (++mRefreshCount % 10 == 0) {
+                    mHandler.removeMessages(PLAYER_REFRESH_UI);
+                }
+                break;
+
+                default:
+                    break;
+            }
         }
         
     };
@@ -148,21 +192,14 @@ public class VideoPlayActivity extends Activity {
             return;
         }
         LogUtil.d(TAG, "intentProcess()==true");
-        //accelerometer
-        /*int accelerometerDefault = Settings.System.getInt(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, -1);
-        //accelerometerDefault -->0:no rotate, 1:rotate 90, 2:rotate 180, 3:rotate 270
-        if(accelerometerDefault != 0) {
-            mbSupportRotate = true;
-        } else {
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR | ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        }*/
         
         mbNeedSavePos = true;
         mTelephonyManager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        mKeyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        
         mVideoObservable = new VideoObservable(this);
         //listen the screen on or off
+        mKeyguardManager = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+//        KeyguardLock mKeyguardLock = mKeyguardManager.newKeyguardLock("Lock");
+//        mKeyguardLock.disableKeyguard();
         
         if(mNeedSyncWithDB) {
             if(mVideoStatDao == null) {
@@ -207,7 +244,6 @@ public class VideoPlayActivity extends Activity {
         groupVideos();
         resetNextPreButtons();
         mPlayer.setUriString(mUriString);
-        
         /*if(!mbUserGuide && isNeedAnimate()) {
             mbUserGuide = true;
         }
@@ -232,6 +268,15 @@ public class VideoPlayActivity extends Activity {
         window.setAttributes(winParams);
     }
 
+    private void resumeAutoScreenLockFlag() {
+        if ("Incredible S".equals(android.os.Build.MODEL)) {
+           return;
+        }
+        
+        Window win = getWindow();
+        win.setAttributes(mWinParams);
+    }
+    
     private void registerPhoneListener() {
         if(mPhoneStateListener == null) {
             mPhoneStateListener = new OnePhoneStateListener();
@@ -395,7 +440,7 @@ public class VideoPlayActivity extends Activity {
             }
             String name_left = leftstr.substring(0, char_index_left); // to get "AA"
 
-          //right
+            //right
             int char_index_right = 0;
             for (int i =  strRight.length()-1; i >= 0; i--) {
                 if(!Character.isDigit(strRight.charAt(i))){
@@ -635,6 +680,13 @@ public class VideoPlayActivity extends Activity {
         if(Intent.ACTION_VIEW.equals(intent.getAction())) {
             mNeedSyncWithDB = false;
             mUri = intent.getData();
+            /*Bundle bundle = intent.getExtras();
+            if(bundle != null) {
+                mUriString = bundle.getString(VIDEO_PATH);
+                Uri.Builder builder = new Uri.Builder();
+                builder.appendPath(mUriString);
+                mUri = builder.build();
+            }*/
             LogUtil.d(TAG, "mUri=" + mUri.toString());
             String uriPrefix = (MediaStore.Video.Media.EXTERNAL_CONTENT_URI).toString();
             //      content://media/external/video/media
@@ -815,6 +867,16 @@ public class VideoPlayActivity extends Activity {
     }
 
 	@Override
+    public void onConfigurationChanged(Configuration newConfig) {
+	    if(mPlayer != null){
+            mPlayer.resetBtRect(newConfig.orientation);
+            mPlayer.mVideoView.configurationChanged();
+           // mPlayer.mVideoView.setVideoSize(true);
+        }
+        super.onConfigurationChanged(newConfig);
+    }
+
+    @Override
 	protected void onStart() {
 		((AudioManager) getSystemService(AUDIO_SERVICE)).requestAudioFocus(
 				null, AudioManager.STREAM_MUSIC,
@@ -826,7 +888,6 @@ public class VideoPlayActivity extends Activity {
 	public void onPause() {
 		mbIsActivie = false;
 		mbScanner_status = false;
-		mIsViewShowing = true;
 		mPauseCount++;
 		unRegisterKeyguardEventListener();
 
@@ -896,8 +957,6 @@ public class VideoPlayActivity extends Activity {
 	@Override
 	public void onResume() {
 		mbIsActivie = true;
-		mbIsBackBtnPress = false;
-		mIsViewShowing = true;
 
 		if (!mReceiverRegisted) {
 			mReceiverRegisted = true;
@@ -909,10 +968,10 @@ public class VideoPlayActivity extends Activity {
 
 		if (mKeyguardManager != null) {
 			if (!mKeyguardManager.inKeyguardRestrictedInputMode()) {
-				Log.d(TAG, "Launch video");
+				LogUtil.d(TAG, "screen unlock, Launch video");
 				resumeVideo();
 			} else {
-				Log.d(TAG, "onResume(), screen lock, don't play video");
+				LogUtil.d(TAG, "onResume(), screen lock, don't play video");
 				registerKeyguardEventListener();
 			}
 		}
@@ -946,6 +1005,16 @@ public class VideoPlayActivity extends Activity {
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
+		if (null != mPlayer) {
+            mPlayer.onDestroy();
+        }
+        
+        if (mVideoStatDao != null) {
+            mVideoStatDao.close();
+            mVideoStatDao = null;
+        }
+        
+        resumeAutoScreenLockFlag();
 	}
 
 	private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver() {
@@ -957,7 +1026,7 @@ public class VideoPlayActivity extends Activity {
 			} else {
 				mPlayer.updateChargingStatus(false);
 			}
-
+			// get current battery level
 			int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
 			mPlayer.updateBatteryInfo(level);
 		}

@@ -1507,8 +1507,6 @@ public class MovieControllerOverlay extends FrameLayout implements
                     .findViewById(R.id.gesture_container);
             mBottomBarLayout = (RelativeLayout) rootView
                     .findViewById(R.id.bottom_bg);
-            mGestureLayout = (RelativeLayout) rootView
-                    .findViewById(R.id.gesture_container);
 
             mScaleNumView = (TextView) rootView.findViewById(R.id.scale_num);
             mScaleView = (ImageView) rootView.findViewById(R.id.gestrue_show);
@@ -1520,11 +1518,6 @@ public class MovieControllerOverlay extends FrameLayout implements
                     .findViewById(R.id.lock_screen_bg);
             mLockScreenBtn.setOnClickListener(this);
             mLockScreenBtn.requestFocus();
-
-            // mLockTextview = (TextView)
-            // rootView.findViewById(R.id.lock_screen);
-            // mLockScreenLayout = (RelativeLayout)
-            // rootView.findViewById(R.id.lock_screen_bg);
 
             float density = context.getResources().getDisplayMetrics().density;
             DisplayMetrics metrics = context.getResources().getDisplayMetrics();

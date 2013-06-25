@@ -62,7 +62,6 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
     private static final String CMDPAUSE = "pause";
     private static final int UPDATE_SUBTITLE = 100;
     private Context mContext;
-    // public final BaiduVideoView mVideoView;
     public final VideoInterface mVideoView;
     private SubtitleView mSubtitleView;
     private Subtitle mSubtitle;
@@ -203,9 +202,9 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
                 mController.onTouchEvent(event);
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     LogUtil.d(TAG, "MotionEvent.ACTION_UP");
-                    if (isPaused() && !mController.isLockedScreen())
+                    /*if (isPaused() && !mController.isLockedScreen()) {
                         playVideo();
-
+                    }*/
                     return false;
                 }
 
@@ -286,9 +285,9 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
     }
     
     private void showSystemUi(boolean visible) {
-//        int flag = visible ? 0 : View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                | View.SYSTEM_UI_FLAG_LOW_PROFILE;
-        int flag = visible ? 0 : 8;
+        int flag = visible ? 0 : View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LOW_PROFILE;
+//        int flag = visible ? 0 : 8;
         mVideoView.setSystemUiVisibility(flag);
     }
 
@@ -597,7 +596,7 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
                 playVideo();
             }
             return true;
-        /*case KeyEvent.KEYCODE_MEDIA_PAUSE:
+        case KeyEvent.KEYCODE_MEDIA_PAUSE:
             if (mVideoView.isPlaying()) {
                 pauseVideo();
             }
@@ -606,7 +605,7 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
             if (!mVideoView.isPlaying()) {
                 playVideo();
             }
-            return true;*/
+            return true;
         case KeyEvent.KEYCODE_MEDIA_PREVIOUS:
         case KeyEvent.KEYCODE_MEDIA_NEXT:
             // TODO: Handle next / previous accordingly, for now we're
@@ -617,8 +616,8 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
     }
 
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        // CL-32717: We process the volume-key-up event in function onKeyUp() of MovieControllerOverlay.java, so we
-        //           should not process volume-key-up event here, otherwise it will cause uncertain volume change.
+        // We process the volume-key-up event in function onKeyUp() of MovieControllerOverlay.java, so we
+        // should not process volume-key-up event here, otherwise it will cause uncertain volume change.
         return isMediaKey(keyCode);
     }
 
@@ -627,8 +626,8 @@ public class MoviePlayer implements MediaPlayer.OnErrorListener,
                 || keyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS
                 || keyCode == KeyEvent.KEYCODE_MEDIA_NEXT
                 || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE
-                /*|| keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
-                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE*/;
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PLAY
+                || keyCode == KeyEvent.KEYCODE_MEDIA_PAUSE;
     }
 
     // We want to pause when the headset is unplugged.

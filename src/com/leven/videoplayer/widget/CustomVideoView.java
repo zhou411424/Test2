@@ -719,8 +719,6 @@ public class CustomVideoView extends SurfaceView implements VideoInterface {
         getMaxScale();
     }
     
-   
-
     private void adjustScreenResolution() {
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) { 
             if (mScreenWidth > mScreenHeight) {
