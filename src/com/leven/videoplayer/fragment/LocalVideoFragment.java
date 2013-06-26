@@ -17,7 +17,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
-import android.provider.SyncStateContract.Constants;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
@@ -48,6 +47,7 @@ import com.actionbarsherlock.view.Menu;
 import com.actionbarsherlock.view.MenuInflater;
 import com.actionbarsherlock.view.MenuItem;
 import com.leven.videoplayer.R;
+import com.leven.videoplayer.utils.Constants;
 import com.leven.videoplayer.utils.DownloadSoUtils;
 import com.leven.videoplayer.utils.LogUtil;
 import com.leven.videoplayer.utils.VideoObservable;
@@ -72,7 +72,7 @@ public class LocalVideoFragment extends SherlockFragment {
 	public static final int LIST_MODE = 0;
 	public static final int GRID_MODE = 1;
 	public static final int FOLDER_MODE = 2;
-	private static final String IS_ORDER_IN_ADDEDTIME = "is_order_inaddedtime";
+	public static final String IS_ORDER_IN_ADDEDTIME = "is_order_inaddedtime";
     protected static final String VIDEO_PATH_KEY = "VIDEO_PATH";
     protected static final String VIDEO_ID_KEY = "VIDEO_ID";
     protected static final String VIDEO_POS_KEY = "VIDEO_POS";
@@ -99,12 +99,13 @@ public class LocalVideoFragment extends SherlockFragment {
 	private VideoListAdapter mVideoListAdapter;
 	private VideoGridView mVideoGridView;
 	private int mVideoNum;
+	private int mFoolderNum;
     private VideoListView mVideoListView;
 	private View video_list;
 	private View video_grid;
 	private View video_folder;
 	private GestureDetector mGestureDetector;
-	private TextView mListVideoNum;
+	private TextView mFooterView;
 	private VideoListView mVideoFolderView;
     private VideoGridAdapter mVideoGridAdapter;
     private VideoFolderAdapter mVideoFolderAdapter;
@@ -144,7 +145,7 @@ public class LocalVideoFragment extends SherlockFragment {
     @Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		
+		LogUtil.d(TAG, "onActivityCreated.");
 		mSdCardExist  = isSdCardExists();
 		mContentResolver = getActivity().getContentResolver();
 		
@@ -156,15 +157,9 @@ public class LocalVideoFragment extends SherlockFragment {
     public void onStart() {
         super.onStart();
         LogUtil.d(TAG, "OnStart...");
-        
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
-        filter.addAction(Intent.ACTION_MEDIA_UNMOUNTED);
-        filter.addAction(Intent.ACTION_MEDIA_BAD_REMOVAL);
-        filter.addAction(Intent.ACTION_MEDIA_REMOVED);
-        filter.addAction(Intent.ACTION_MEDIA_SCANNER_FINISHED);
-        filter.addDataScheme("file");
-        getActivity().registerReceiver(mIntentReceiver, filter);
+        if(mSdCardExist) {
+            getVideoFolderFromDB(mVideoFolderList);
+        }
     }
 
     @Override
@@ -189,19 +184,25 @@ public class LocalVideoFragment extends SherlockFragment {
     public void onStop() {
         super.onStop();
         LogUtil.d(TAG, "onStop...");
-        SharedPreferences prefs = getActivity().getSharedPreferences(Constants.CONTENT_DIRECTORY, Context.MODE_WORLD_WRITEABLE);
+        SharedPreferences prefs = getActivity().getSharedPreferences(Constants.CONFIG_PREFERENCES, Context.MODE_WORLD_WRITEABLE);
         Editor editor = prefs.edit();
         editor.putInt(SHOW_MODE, mShowMode);
         editor.putBoolean(IS_ORDER_IN_ADDEDTIME, mbOrderInAddedTime);
         editor.commit();
-        
-        getActivity().unregisterReceiver(mIntentReceiver);
     }
     
     @Override
     public void onDestroy() {
         super.onDestroy();
         LogUtil.d(TAG, "onDestroy...");
+        if(mVideoStatDao != null) {
+            mVideoStatDao.close();
+        }
+        
+        if(mVideoListCursor != null) {
+            mVideoListCursor.close();
+            mVideoListCursor = null;
+        }
     }
     
     //Restore the first visible item position
@@ -226,7 +227,7 @@ public class LocalVideoFragment extends SherlockFragment {
     }
     
 	private void initPreferences() {
-		prefs = getActivity().getSharedPreferences(Constants.CONTENT_DIRECTORY, Context.MODE_PRIVATE);
+		prefs = getActivity().getSharedPreferences(Constants.CONFIG_PREFERENCES, Context.MODE_PRIVATE);
 		mShowMode = prefs.getInt(SHOW_MODE, LIST_MODE);
 		mbOrderInAddedTime = prefs.getBoolean(IS_ORDER_IN_ADDEDTIME, false);
 	}
@@ -280,10 +281,11 @@ public class LocalVideoFragment extends SherlockFragment {
 	    mShowMode = LIST_MODE;
 	    mVideoListView = (VideoListView) video_list.findViewById(R.id.videoList);
 	    //custom footer view
-	    mListVideoNum = (TextView) View.inflate(getActivity(), R.layout.footer_view, null);
-	    mVideoListView.addFooterView(mListVideoNum);
+	    mFooterView = (TextView) View.inflate(getActivity(), R.layout.footer_view, null);
+	    mVideoListView.addFooterView(mFooterView);
 	    mVideoGridView = (VideoGridView) video_grid.findViewById(R.id.videoGrid);
 	    mVideoFolderView = (VideoListView) video_folder.findViewById(R.id.videoList);
+	    mVideoFolderView.addFooterView(mFooterView);
 	    mVideoFolderView.setOnScrollListener(mScrollListener);
 	    mVideoFolderView.setBackgroundColor(Color.WHITE);
 	    if(mVideoFolderList != null) {
@@ -318,7 +320,7 @@ public class LocalVideoFragment extends SherlockFragment {
 				
 			});
 			mVideoNum = mVideoListView.getCount();
-			mListVideoNum.setText((mVideoNum - 1) + getString(R.string.video_num));
+			mFooterView.setText((mVideoNum - 1) + getString(R.string.video_num));
 			LogUtil.d(TAG, "video num = " + (mVideoNum-1));
 		} else if(mShowMode == GRID_MODE){
 		    LogUtil.d(TAG, "current mode is grid mode");
@@ -333,7 +335,8 @@ public class LocalVideoFragment extends SherlockFragment {
 		    mVideoFolderView.setAdapter(mVideoFolderAdapter);
 		    mVideoFolderView.setOnItemClickListener(mFolderItemClickListener);
 		    registerForContextMenu(mVideoFolderView);
-            mVideoNum = mVideoFolderView.getCount();
+            mFoolderNum = mVideoFolderView.getCount();
+            mFooterView.setText((mFoolderNum - 1) + getString(R.string.folder_num));
 		}
 	}
 	
@@ -403,46 +406,6 @@ public class LocalVideoFragment extends SherlockFragment {
         public ImageView mFolderOperation;
     }
 	
-	private BroadcastReceiver mIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            String sdState = Environment.getExternalStorageState();
-
-            boolean sdcard_status_changed = true;
-            if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) {
-                mSdCardExist = true;
-            } else if (action.equals(Intent.ACTION_MEDIA_UNMOUNTED)) {
-                /* It is mounting now */
-                if (Environment.MEDIA_UNMOUNTED.equals(sdState)
-                        || Environment.MEDIA_CHECKING.equals(sdState)) {
-                    LogUtil.d(TAG, "ACTION_MEDIA_UNMOUNTED ---- SD 1 state: " + sdState + ", ignored");
-                    return;
-                }
-                if (mSdCardExist) {
-                    mSdCardExist = false;
-                    showSdCardUnmount();
-                }
-            } else if (action.equals(Intent.ACTION_MEDIA_REMOVED)) {
-                showSdCardUnmount();
-            } else if (action.equals(Intent.ACTION_MEDIA_BAD_REMOVAL)) {
-                showSdCardUnmount();
-            } else if (action.equals(Intent.ACTION_MEDIA_SCANNER_FINISHED)) {
-                Log.d(TAG, "ACTION_MEDIA_SCANNER_FINISHED");
-            } else {
-                Log.d(TAG, "Unkown broadcast, action = " + action + ","
-                        + "sdcard_status_changed = " + sdcard_status_changed
-                        + ", sd card exist = " + mSdCardExist);
-                sdcard_status_changed = false;
-            }
-
-            if (sdcard_status_changed) {
-                getVideoFolderFromDB(mVideoFolderList);
-            }
-        }
-
-    };
-    
     private void getVideoFolderFromDB(ArrayList<FileInfo> videoFolderList) {
         if(videoFolderList == null) {
             return;
@@ -455,28 +418,29 @@ public class LocalVideoFragment extends SherlockFragment {
             getActivity().finish();
             return;
         }
-        
-        while(cursor.moveToNext()) {
-            FileInfo fi = new FileInfo();
-            fi.bucketId = cursor.getString(
-                    cursor.getColumnIndex(MediaStore.Video.VideoColumns.BUCKET_ID));
-            fi.displayName = cursor.getString(
-                    cursor.getColumnIndex(MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME));
-            fi.path = getVideoFolderPathByBucketId(fi.bucketId);
-            fi.num = getVideoFolderNumByBucketId(fi.bucketId);
-            fi.isDir = true;
-            if(fi.path != null) {
-                mVideoFolderList.add(fi);
-            }
+        if(cursor.moveToFirst()) {
+            mbIsDir = true;
+            
+            do {
+                FileInfo fi = new FileInfo();
+                fi.bucketId = cursor.getString(
+                        cursor.getColumnIndex(MediaStore.Video.VideoColumns.BUCKET_ID));
+                fi.displayName = cursor.getString(
+                        cursor.getColumnIndex(MediaStore.Video.VideoColumns.BUCKET_DISPLAY_NAME));
+                fi.path = getVideoFolderPathByBucketId(fi.bucketId);
+                fi.num = getVideoFolderNumByBucketId(fi.bucketId);
+                fi.isDir = true;
+                if(fi.path != null) {
+                    mVideoFolderList.add(fi);
+                }
+            } while(cursor.moveToNext());
+            LogUtil.d(TAG, "mVideoFolderList size="+mVideoFolderList.size());
         }
-        LogUtil.d(TAG, "mVideoFolderList size="+mVideoFolderList.size());
-        mbIsDir = true;
         
         if(cursor != null) {
             cursor.close();
         }
         
-        mVideoFolderView.setAdapter(mVideoFolderAdapter);
         return;
     }
 	
@@ -547,11 +511,11 @@ public class LocalVideoFragment extends SherlockFragment {
         public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
             File chosedFile = new File(mVideoFolderList.get(position).path);
             if(chosedFile.isDirectory()) {
-                mCurPath = mVideoFolderList.get(position).displayName;
+                mCurPath = mVideoFolderList.get(position).path;
                 mCurBucketId = mVideoFolderList.get(position).bucketId;
                 
                 Intent intent = new Intent(getActivity(), FolderListActivity.class);
-                intent.putExtra("bucket_name", mCurPath);
+                intent.putExtra("bucket_path", mCurPath);
                 intent.putExtra("bucket_id", mCurBucketId);
                 startActivity(intent);
             }

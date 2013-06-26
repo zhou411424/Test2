@@ -71,18 +71,15 @@ public class VideoStatDao {
 	
 	public void close() {
 	    synchronized (SYNCHRONIZE) {
-	        mUsers--;
-	        if(mUsers == 0) {
-	            if(mDB != null) {
-	                mDB.close();
-	                mDB = null;
-	            }
-	            
-	            if(mDatabaseHelper != null) {
-	                mDatabaseHelper.close();
-	                mDatabaseHelper = null;
-	            }
-	        }
+            if(mDB != null) {
+                mDB.close();
+                mDB = null;
+            }
+            
+            if(mDatabaseHelper != null) {
+                mDatabaseHelper.close();
+                mDatabaseHelper = null;
+            }
         }
 	}
 	

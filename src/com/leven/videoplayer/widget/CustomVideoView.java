@@ -259,7 +259,7 @@ public class CustomVideoView extends SurfaceView implements VideoInterface {
             }
             
             getMaxScale();
-            // getMinScale();
+//             getMinScale();
             requestLayout();
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 getHolder().setFixedSize(mVideoWidth, mVideoHeight);

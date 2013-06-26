@@ -38,6 +38,7 @@ import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.leven.videoplayer.fragment.LocalVideoFragment;
+import com.leven.videoplayer.utils.Constants;
 import com.leven.videoplayer.utils.DownloadSoUtils;
 import com.leven.videoplayer.utils.LogUtil;
 import com.leven.videoplayer.utils.VideoObservable;
@@ -914,7 +915,7 @@ public class VideoPlayActivity extends Activity {
 
 		if (mVideoId != -1) {
 			SharedPreferences sharedPreference = getSharedPreferences(
-					LocalVideoFragment.LAST_SHOWMODE,
+					Constants.CONFIG_PREFERENCES,
 					Context.MODE_WORLD_WRITEABLE);
 			Editor editor = sharedPreference.edit();
 			editor.putInt(LocalVideoFragment.LAST_PLAYED_FILE, mVideoId);

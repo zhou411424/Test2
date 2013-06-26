@@ -228,4 +228,29 @@ public class VideoObservable extends Observable {
 		}
 		return null;
 	}
+	
+	//query video info from parent folder
+	public Cursor queryFolderVideoInfo_InNameOrder(String bucketId) {
+	    Cursor cur = mContext.getContentResolver().query(VIDEO_URI, 
+	            VIDEO_BUCKET, BUCKET_ID_SELECTION, new String[] { bucketId }, null);
+	    if(cur == null) {
+	        return null;
+	    } else {
+	        SortCursor sc = new SortCursor(cur, 
+	                MediaStore.Video.Media.DISPLAY_NAME, true);
+	        return sc;
+	    }
+	}
+	
+	public Cursor queryFolderVideoInfo_InAddedDate(String bucketId) {
+        Cursor cur = mContext.getContentResolver().query(VIDEO_URI, 
+                VIDEO_BUCKET, BUCKET_ID_SELECTION, new String[] { bucketId }, null);
+        if(cur == null) {
+            return null;
+        } else {
+            SortCursor sc = new SortCursor(cur, 
+                    MediaStore.Video.Media.DATE_ADDED, true);
+            return sc;
+        }
+    }
 }

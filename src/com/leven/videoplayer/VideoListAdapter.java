@@ -46,7 +46,7 @@ public class VideoListAdapter extends CursorAdapter {
 	private static final String IMAGE_CACHE_DIR = "images";
 	private FragmentManager mFm;
 	private ContentResolver mContentResolver;
-    
+	
 	@SuppressWarnings("deprecation")
 	public VideoListAdapter(Context context, Cursor c, 
 			VideoObservable videoObservable, VideoStatDao videoStatDao, FragmentManager fm) {
@@ -85,7 +85,6 @@ public class VideoListAdapter extends CursorAdapter {
     	holder.mListNewVideoIcon = (ImageView) view.findViewById(R.id.iv_new_video_icon);
     	holder.mListVideoDuration = (TextView) view.findViewById(R.id.tv_video_duration);
     	holder.mListVideoName = (TextView) view.findViewById(R.id.tv_video_name);
-    	holder.mListVideoDate = (TextView) view.findViewById(R.id.tv_video_date);
     	holder.mListVideoSize = (TextView) view.findViewById(R.id.tv_video_size);
     	holder.mListPlayVideo = (ImageView) view.findViewById(R.id.iv_play);
         view.setTag(holder);
@@ -102,9 +101,6 @@ public class VideoListAdapter extends CursorAdapter {
 		long millionTime = cursor.getLong(mDurationColumn);
 		String videoDuration = Utils.getVideoDuration(millionTime);
         holder.mListVideoDuration.setText(videoDuration);
-        //get video date is milliseconds
-        long milliseconds = cursor.getLong(mDateAddedColumn);
-        holder.mListVideoDate.setText(Utils.formatDate(milliseconds));
         //get video size is bytes
         long bytes = cursor.getLong(mSizeColumn);
         holder.mListVideoSize.setText(Utils.formatFileSize(bytes));
@@ -242,7 +238,6 @@ public class VideoListAdapter extends CursorAdapter {
 		public ImageView mListNewVideoIcon;
 		public TextView mListVideoDuration;
 		public TextView mListVideoName;
-		public TextView mListVideoDate;
 		public TextView mListVideoSize;
 		public ImageView mListPlayVideo;
 	}

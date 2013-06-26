@@ -1478,7 +1478,6 @@ public class MovieControllerOverlay extends FrameLayout implements
             mLockScreenBtnRect = new Rect(mScreenWidth - constwidth, top, mScreenWidth,bottom);
         }
         
-        
     }
     private void switchViewPort() {
         if (SCALE_1X.contentEquals(mVideoListener.getOnVideoFactor())) {

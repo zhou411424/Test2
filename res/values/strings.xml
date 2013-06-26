@@ -39,6 +39,7 @@
 
     <string name="second">S</string>
     <string name="video_num">个视频</string>
+    <string name="folder_num">个文件夹</string>
     <string name="general_loading">正在载入，请稍后……</string>
 	<string name="sd_card_unmounted">SD卡已卸载，请装载后重试</string>
 	<string name="file_damaged">很抱歉，无法播放该视频</string>
