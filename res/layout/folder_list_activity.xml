@@ -41,7 +41,7 @@
                 android:layout_height="40.0dip"
                 android:layout_weight="1.0"
                 android:background="@drawable/local_grid_selector"
-                android:src="@drawable/localmusic_topbar_icon_scan_normal" />
+                android:src="@drawable/localvideo_topbar_icon_scan_normal" />
 
             <ImageButton
                 android:id="@+id/title_bar_sort"
@@ -49,7 +49,7 @@
                 android:layout_height="40.0dip"
                 android:layout_weight="1.0"
                 android:background="@drawable/local_grid_selector"
-                android:src="@drawable/localmusic_topbar_icon_sort_normal" />
+                android:src="@drawable/localvideo_topbar_icon_sort_normal" />
 
             <ImageButton
                 android:id="@+id/title_bar_edit"

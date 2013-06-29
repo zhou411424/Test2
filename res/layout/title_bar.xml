@@ -34,33 +34,23 @@
             android:textColor="@color/white" />
     </LinearLayout>
 
-    <LinearLayout
+    <ImageButton
+        android:id="@+id/ib_sort"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingLeft="10dp"
-        android:paddingRight="10dp" >
+        android:layout_centerVertical="true"
+        android:layout_marginRight="10dp"
+        android:background="@drawable/local_grid_selector"
+        android:src="@drawable/localvideo_topbar_icon_sort_normal" />
 
-        <ImageButton
-            android:id="@+id/ib_scan"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/localvideo_topbar_icon_scan_normal" />
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:background="@drawable/titlebar_line" />
-
-        <ImageButton
-            android:id="@+id/ib_sort"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:background="@drawable/localvideo_topbar_icon_sort_normal" />
-    </LinearLayout>
+    <ImageButton
+        android:id="@+id/ib_scan"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@id/ib_sort"
+        android:background="@drawable/local_grid_selector"
+        android:src="@drawable/localvideo_topbar_icon_scan_normal" />
 
 </RelativeLayout>

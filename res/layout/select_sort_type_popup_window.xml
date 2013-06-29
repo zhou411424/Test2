@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/localvideo_bg_sort"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/sort_name"
+        android:layout_width="120.0dip"
+        android:layout_height="50.0dip"
+        android:background="@drawable/local_video_tab_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="10.0dip"
+        android:singleLine="true"
+        android:text="@string/order_in_name"
+        android:textColor="@android:color/black"
+        android:textSize="14.0sp" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:layout_height="1.0dip"
+        android:background="#ffcccccc" />
+
+    <TextView
+        android:id="@+id/sort_time"
+        android:layout_width="120.0dip"
+        android:layout_height="50.0dip"
+        android:background="@drawable/local_video_tab_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="10.0dip"
+        android:singleLine="true"
+        android:text="@string/order_in_addedtime"
+        android:textColor="@android:color/black"
+        android:textSize="14.0sp" />
+
+</LinearLayout>

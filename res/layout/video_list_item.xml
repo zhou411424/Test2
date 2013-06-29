@@ -68,6 +68,7 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="10dp"
         android:layout_toRightOf="@id/layout_thumb"
+        android:layout_toLeftOf="@id/iv_play"
         android:orientation="vertical" >
 
         <TextView

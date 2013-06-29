@@ -12,4 +12,6 @@
     <color name="color_gridview_item_pressed">#ff279ce7</color>
     <color name="color_transparent">#00000000</color>
     <color name="color_titlebar_text">#ffffffff</color>
+    <color name="color_tab_press_bg">#ffcccccc</color>
+    <color name="background_transparent">#00000000</color>
 </resources>

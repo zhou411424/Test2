@@ -58,4 +58,6 @@
     <string name="details_hms">%1$d:%2$02d:%3$02d</string>
     <string name="net_disconnect">没有网络连接，请检查网络设置</string>
     <string name="continue_play">继续播放</string>
+    <string name="getting_video_name">视频名称</string>
+    <string name="video_length">00:00</string>
 </resources>
